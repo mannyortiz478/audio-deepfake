@@ -1,0 +1,53 @@
+import torch
+import torch.nn as nn
+import numpy as np
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from torch.utils.data import DataLoader
+# Assuming your LSTM model is defined somewhere
+class LSTMModel(nn.Module):
+    # Define your model's architecture here
+    def __init__(self):
+        super(LSTMModel, self).__init__()
+        # Your model's layers here
+    def forward(self, x):
+        # Forward pass logic
+        pass
+# Assuming your dataset class is defined somewhere
+class AudioDataset(Dataset):
+    # Your dataset class definition
+    pass
+# Load the model
+model = LSTMModel()
+model_path = 'lstm_spoofing_detector_epoch_10.pth' #LSTM-CQT model detector
+model.load_state_dict(torch.load(model_path))
+model.eval()
+# Load the test dataset
+test_dataset = AudioDataset(file_list='/proj/rcs-ssd/zz3093/benchmark/test_dataset/files_list.txt',
+                            labels='/proj/rcs-ssd/zz3093/benchmark/test_dataset/labels.txt')
+test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+# Prepare to collect the outputs and labels
+all_labels = []
+all_predictions = []
+# Perform testing
+with torch.no_grad():
+    for data in test_loader:
+        inputs, labels = data
+        outputs = model(inputs)
+        predictions = torch.round(outputs)  # Assuming binary classification
+        all_labels.extend(labels.numpy())
+        all_predictions.extend(predictions.numpy())
+# Convert to numpy arrays
+all_labels = np.array(all_labels)
+all_predictions = np.array(all_predictions)
+# Calculate metrics
+accuracy = accuracy_score(all_labels, all_predictions)
+precision = precision_score(all_labels, all_predictions)
+recall = recall_score(all_labels, all_predictions)
+f1 = f1_score(all_labels, all_predictions)
+# Log the results to a file
+with open('test_results.txt', 'w') as f:
+    f.write(f"Accuracy: {accuracy:.4f}\n")
+    f.write(f"Precision: {precision:.4f}\n")
+    f.write(f"Recall: {recall:.4f}\n")
+    f.write(f"F1 Score: {f1:.4f}\n")
+print("Test results saved to test_results.txt")
